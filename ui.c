@@ -76,7 +76,9 @@ char *prompt_line(void)
 char *prompt_username(void)
 {
     uid_t uid = getuid();
+    printf("The uid is: %d\n", uid);
     struct passwd *pwd = getpwuid(uid);
+    printf("The username is: %s\n", pwd->pw_name);
     return pwd->pw_name;
 
 }
@@ -101,6 +103,7 @@ char *prompt_cwd(void)
     } else {
         printf("The current working directory is: %s\n", cwd);
         return cwd;
+        // return 0;
     }
     return "/unknown/path";
 }
@@ -140,8 +143,12 @@ unsigned int prompt_cmd_num(void)
 int main(void)
 {
     //test the functions here
-    prompt_hostname();
-    prompt_cwd();
+    // prompt_hostname();
+    // prompt_cwd();
+    // uid_t test = getuid();
+    // printf("The test uid: %d\n", test);
+    prompt_username();
+    // prompt_line();
 
 
 
