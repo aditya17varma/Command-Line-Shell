@@ -15,6 +15,7 @@ static const char *bad_str  = "🤯";
 static bool scripting = false;
 static char hostname[256];
 static char cwd[256];
+static char spliced_cwd[256];
 // struct passwd pwd;
 
 static int readline_init(void);
@@ -137,7 +138,23 @@ char *prompt_cwd(void)
         
     } else {
         // printf("The current working directory is: %s\n", cwd);
-        return cwd;
+        char *env = getenv("HOME");
+        int resultCmp = strncmp(cwd, env, strlen(env));
+        if (resultCmp == 0){
+            //splice
+            char spliced[strlen(cwd) - strlen(env)];
+            memcpy(spliced, &cwd[strlen(env)], strlen(cwd) - strlen(env));
+            spliced[strlen(env) - 2] = '\0';
+            // printf("%s\n", spliced);
+            char result[strlen(spliced)];
+            sprintf(spliced_cwd, "~%s", spliced);
+            // printf("%s\n", result);
+            
+            return spliced_cwd;
+        } else {
+            return cwd;
+        }
+
         // return 0;
     }
     return "/unknown/path";
@@ -194,8 +211,17 @@ int readline_init(void)
 
 // int main(void)
 // {
-//     //test the functions here
-//     // prompt_hostname();
+//     // test the functions here
+//     // char *test_dir = prompt_cwd();
+//     // char *env = getenv("HOME");
+//     // printf("%s\n", cwd);
+//     // printf("%d\n", strlen(cwd));
+//     // printf("%s\n", env);
+//     // printf("%d\n", strlen(env));
+
+//     // int resultCmp = strncmp(cwd, env, strlen(env));
+//     // printf("%d\n", resultCmp);
+
 //     // prompt_cwd();
 //     // uid_t test = getuid();
 //     // printf("The test uid: %d\n", test);
@@ -208,7 +234,7 @@ int readline_init(void)
     
     
     
-//     printf("Testing prompt: %s\n", prompt_line());
+//     // printf("Testing prompt: %s\n", prompt_line());
 
 
 
