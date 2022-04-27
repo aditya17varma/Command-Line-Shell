@@ -64,6 +64,7 @@ int main(void)
 
     char *command;
     while (true) {
+        printf("%s:$  ", prompt_line());
 
         
         command = read_command();

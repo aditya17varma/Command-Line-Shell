@@ -110,9 +110,9 @@ char *prompt_line(void)
 char *prompt_username(void)
 {
     uid_t uid = getuid();
-    printf("The uid is: %d\n", uid);
+    // printf("The uid is: %d\n", uid);
     struct passwd *pwd = getpwuid(uid);
-    printf("The username is: %s\n", pwd->pw_name);
+    // printf("The username is: %s\n", pwd->pw_name);
     return pwd->pw_name;
 
 }
@@ -124,7 +124,7 @@ char *prompt_hostname(void)
     // 
     // char hostname[10];
     gethostname(hostname, 10);
-    printf("The hostname is: %s\n", hostname);
+    // printf("The hostname is: %s\n", hostname);
     return hostname;
 }
 
@@ -136,7 +136,7 @@ char *prompt_cwd(void)
         perror("getcwd() error");
         
     } else {
-        printf("The current working directory is: %s\n", cwd);
+        // printf("The current working directory is: %s\n", cwd);
         return cwd;
         // return 0;
     }
@@ -147,7 +147,7 @@ int prompt_status(void)
 {
     bool tempF = false;
     bool tempT = true;
-    printf("true: %i false: %i\n", tempT, tempF);
+    // printf("true: %i false: %i\n", tempT, tempF);
     return tempT;
 }
 
