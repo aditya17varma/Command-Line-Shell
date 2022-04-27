@@ -12,6 +12,7 @@
 #include "history.h"
 #include "logger.h"
 #include "ui.h"
+#include "elist.h"
 
 struct command_line {
     char **tokens;
@@ -67,6 +68,8 @@ int main(void)
         
         command = read_command();
         if (command == NULL) {
+            // goto cleanup;
+            free(command);
             break;
         }
 
@@ -106,6 +109,7 @@ int main(void)
             // so cmd[1].tokens = &tokens[i + 1]
 
         /* We are done with command; free it */
+// cleanup:
         free(command);
     }
 

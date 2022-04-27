@@ -14,25 +14,26 @@ static const char *good_str = "😌";
 static const char *bad_str  = "🤯";
 static bool scripting = false;
 static char hostname[256];
+static char cwd[256];
 // struct passwd pwd;
 
 static int readline_init(void);
 
-// void init_ui(void)
-// {
-//     LOGP("Initializing UI...\n");
+void init_ui(void)
+{
+    LOGP("Initializing UI...\n");
 
-//     char *locale = setlocale(LC_ALL, "en_US.UTF-8");
-//     LOG("Setting locale: %s\n",
-//             (locale != NULL) ? locale : "could not set locale!");
+    char *locale = setlocale(LC_ALL, "en_US.UTF-8");
+    LOG("Setting locale: %s\n",
+            (locale != NULL) ? locale : "could not set locale!");
 
-//     rl_startup_hook = readline_init;
+    rl_startup_hook = readline_init;
 
-//     if (isatty(STDIN_FILENO)) {
-//         LOGP("stdin is a TTY; entering interactive mode\n");
-//         scripting = true;
-//     } 
-// }
+    if (isatty(STDIN_FILENO)) {
+        LOGP("stdin is a TTY; entering interactive mode\n");
+        scripting = true;
+    } 
+}
 
 void destroy_ui(void)
 {
@@ -41,7 +42,7 @@ void destroy_ui(void)
 
 char *prompt_line(void)
 {
-    const char *status = prompt_status() ? bad_str : good_str;
+    const char *status = prompt_status() ? good_str : bad_str;
 
     char cmd_num[25];
     snprintf(cmd_num, 25, "%d", prompt_cmd_num());
@@ -49,6 +50,8 @@ char *prompt_line(void)
     char *user = prompt_username();
     char *host = prompt_hostname();
     char *cwd = prompt_cwd();
+
+    
 
     char *format_str = ">>-[%s]-[%s]-[%s@%s:%s]-> ";
 
@@ -62,6 +65,8 @@ char *prompt_line(void)
         + 1;
 
     char *prompt_str =  malloc(sizeof(char) * prompt_sz);
+
+    // printf("Got till here\n");
 
     snprintf(prompt_str, prompt_sz, format_str,
             status,
@@ -97,9 +102,10 @@ char *prompt_hostname(void)
 char *prompt_cwd(void)
 {
     //might need to allocate memory and free
-    char cwd[256];
+    // char cwd[256];
     if (getcwd(cwd, sizeof(cwd)) == NULL){
         perror("getcwd() error");
+        
     } else {
         printf("The current working directory is: %s\n", cwd);
         return cwd;
@@ -110,47 +116,72 @@ char *prompt_cwd(void)
 
 int prompt_status(void)
 {
-    return -1;
+    bool tempF = false;
+    bool tempT = true;
+    printf("true: %i false: %i\n", tempT, tempF);
+    return tempT;
 }
 
 unsigned int prompt_cmd_num(void)
 {
     //use last_cnum from history.c to get appropriate number
+    int num = 100;
+    return num;
+}
+
+char *read_command(void)
+{
+
+    //implement scripting support here
+    //if we are receiving commands from a user, then do the following:
+    if (scripting){
+        char *line = NULL;
+        size_t buf_sz = 0;
+        ssize_t read_sz = getline(&line, &buf_sz, stdin);
+        if (read_sz == -1){
+            perror("getline");
+            return NULL;
+        }
+        line[read_sz - 1] = '\0';
+        return line;
+    } else {
+        char *prompt = prompt_line();
+        char *command = readline(prompt);
+        free(prompt);
+        return command;
+    }
+   
+    //if we are receinvng commnds form a **script**, then do the following
+    //<insert code that uses getline instead of readline here>
+    // return command;
+}
+
+int readline_init(void)
+{
+    rl_variable_bind("show-all-if-ambiguous", "on");
+    rl_variable_bind("colored-completion-prefix", "on");
     return 0;
 }
 
-// char *read_command(void)
+// int main(void)
 // {
+//     //test the functions here
+//     // prompt_hostname();
+//     // prompt_cwd();
+//     // uid_t test = getuid();
+//     // printf("The test uid: %d\n", test);
+//     // prompt_username();
+//     // const char *test_status = prompt_status() ? good_str : bad_str;
+//     // printf("Test status: %s\n", test_status);
+//     // printf("Test cmd_num: %i\n", prompt_cmd_num());
 
-//     //implement scripting support here
-//     //if we are receiving commands from a user, then do the following:
-//     char *prompt = prompt_line();
-//     char *command = readline(prompt);
-//     free(prompt);
+//     // printf("Size test: %i\n", strlen(prompt_cwd()));
+    
+    
+    
+//     printf("Testing prompt: %s\n", prompt_line());
 
-//     //if we are receinvng commnds form a **script**, then do the following
-//     //<insert code that uses getline instead of readline here>
-//     return command;
+
+
+
 // }
-
-// int readline_init(void)
-// {
-//     rl_variable_bind("show-all-if-ambiguous", "on");
-//     rl_variable_bind("colored-completion-prefix", "on");
-//     return 0;
-// }
-
-int main(void)
-{
-    //test the functions here
-    // prompt_hostname();
-    // prompt_cwd();
-    // uid_t test = getuid();
-    // printf("The test uid: %d\n", test);
-    prompt_username();
-    // prompt_line();
-
-
-
-
-}
