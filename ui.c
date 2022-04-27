@@ -144,7 +144,7 @@ char *prompt_cwd(void)
             //splice
             char spliced[strlen(cwd) - strlen(env)];
             memcpy(spliced, &cwd[strlen(env)], strlen(cwd) - strlen(env));
-            spliced[strlen(env) - 2] = '\0';
+            spliced[strlen(spliced) - 1] = '\0';
             // printf("%s\n", spliced);
             char result[strlen(spliced)];
             sprintf(spliced_cwd, "~%s", spliced);
