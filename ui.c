@@ -144,11 +144,12 @@ char *prompt_cwd(void)
             //splice
             char spliced[strlen(cwd) - strlen(env)];
             memcpy(spliced, &cwd[strlen(env)], strlen(cwd) - strlen(env));
-            spliced[strlen(spliced) - 1] = '\0';
+            // spliced[strlen(spliced) - 1] = '\0';
             // printf("%s\n", spliced);
-            char result[strlen(spliced)];
+            // char result[strlen(spliced)];
             sprintf(spliced_cwd, "~%s", spliced);
-            // printf("%s\n", result);
+            spliced_cwd[strlen(spliced_cwd)] = '\0';
+            printf("%s\n", spliced_cwd);
             
             return spliced_cwd;
         } else {
@@ -222,7 +223,8 @@ int readline_init(void)
 //     // int resultCmp = strncmp(cwd, env, strlen(env));
 //     // printf("%d\n", resultCmp);
 
-//     // prompt_cwd();
+//     prompt_cwd();
+//     // printf("%s\n", prompt_cwd());
 //     // uid_t test = getuid();
 //     // printf("The test uid: %d\n", test);
 //     // prompt_username();

@@ -66,7 +66,6 @@ int main(void)
     while (true) {
         printf("%s:$  ", prompt_line());
 
-        
         command = read_command();
         if (command == NULL) {
             // goto cleanup;
