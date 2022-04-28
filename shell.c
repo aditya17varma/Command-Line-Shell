@@ -20,6 +20,40 @@ struct command_line {
     char *stdout_file;
 };
 
+void execute_pipeline(struct command_line *cmds)
+{
+    struct command_line *current = cmds;
+    
+    if (current->stdout_pipe == true){
+        int fds[2];
+        pipe(fds);
+        pid_t child = fork();
+
+        if (child == 0){
+            //child
+            dup2(fds[1], STDOUT_FILENO);
+            close(fds[0]);
+            // close(fds[1]);
+            execvp(current->tokens[0], current->tokens);
+        } else{
+            dup2(fds[0], STDIN_FILENO);
+            close(fds[1]);
+            // close(fds[1]);
+            execute_pipeline(cmds + 1);
+        }
+    } else {
+        // dup2(fds[0], STDIN_FILENO);
+        if (current->stdout_file != NULL){
+            int output = open(current->stdout_file, O_CREAT | O_WRONLY, 0666);
+            dup2(output, 1);
+        }
+        // close(fds[0]);
+        // close(fds[1]);
+        execvp(current->tokens[0], current->tokens);
+
+    }
+}
+
 char *next_token(char **str_ptr, const char *delim)
 {
     if (*str_ptr == NULL) {
@@ -76,12 +110,20 @@ int main(void)
         LOG("Input command: %s\n", command);
 
         char *tokens[10];
+        // struct elist *command_list = elist_create(128);
 		int token_count = 0;
     		char *next_tok = command;
     		char *curr_tok;
     		while ((curr_tok = next_token(&next_tok, " \t\n\r?")) != NULL) {
-			tokens[token_count] = curr_tok;
-        		printf("Token %02d: '%s'\n", token_count++, curr_tok);
+                // struct command_line temp_command = malloc(sizeof(struct command_line));
+			    tokens[token_count] = curr_tok;
+                if (strcmp(curr_tok, "|") == 0){
+                    tokens[token_count] = '\0';
+                }
+                // strcpy(temp_command->tokens, curr_tok);
+                // temp_command->stdout_pipe = true;
+                // temp_command->stdout_file = NULL;
+        		printf("Token %02d: '%s'\n", token_count++, tokens[token_count]);
     		}
 		tokens[token_count] = (char *) 0;
 
@@ -94,11 +136,26 @@ int main(void)
         //execute_stuff(...)
 
         //get struct command_line and execute pipeline from leetify.c
+        struct command_line cmd[token_count];
+        memset(cmd, 0, sizeof(cmd));
+        for(int i = 0; i < token_count; i++){
+            // struct command_line temp_command = malloc(sizeof(struct command_line));
+            if(i > 0 && tokens[i] == NULL){
+                cmd[i - 1].stdout_pipe = true;
+            }
+            cmd[i].tokens = tokens;
+            cmd[i].stdout_pipe = false;
+            cmd[i].stdout_file = NULL;
+           
+        }
 
-        struct command_line cmd = {0};
-        cmd.tokens = tokens;
-        cmd.stdout_file = NULL;
-        cmd.stdout_pipe = false;
+        pid_t child = fork();
+        if (child == 0){
+            execute_pipeline(cmd);
+        } else {
+         int status;
+            wait(&status);
+        }
 
         // when tokenizing the command line prompt
         // for each token:
@@ -115,6 +172,7 @@ int main(void)
 
     return 0;
 }
+
 
 /*
 use shell.c made in class
