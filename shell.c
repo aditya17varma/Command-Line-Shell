@@ -112,24 +112,35 @@ int main(void)
         char *tokens[10];
         // struct elist *command_list = elist_create(128);
 		int token_count = 0;
-    		char *next_tok = command;
-    		char *curr_tok;
-    		while ((curr_tok = next_token(&next_tok, " \t\n\r?")) != NULL) {
-                // struct command_line temp_command = malloc(sizeof(struct command_line));
-			    tokens[token_count] = curr_tok;
-                if (strcmp(curr_tok, "|") == 0){
-                    tokens[token_count] = '\0';
-                }
-                // strcpy(temp_command->tokens, curr_tok);
-                // temp_command->stdout_pipe = true;
-                // temp_command->stdout_file = NULL;
-        		printf("Token %02d: '%s'\n", token_count++, tokens[token_count]);
-    		}
+        int null_count = 0;
+        char *next_tok = command;
+        char *curr_tok;
+        while ((curr_tok = next_token(&next_tok, " \t\n\r?")) != NULL) {
+            // struct command_line temp_command = malloc(sizeof(struct command_line));
+            tokens[token_count] = curr_tok;
+            if (strcmp(curr_tok, "|") == 0){
+                tokens[token_count] = '\0';
+                null_count++;
+            }
+            // strcpy(temp_command->tokens, curr_tok);
+            // temp_command->stdout_pipe = true;
+            // temp_command->stdout_file = NULL;
+            printf("Token %02d: '%s'\n", token_count = token_count + 1, tokens[token_count]);
+        }
+        
 		tokens[token_count] = (char *) 0;
-
+        
 		if (tokens[0] == NULL){
 			continue;
 		}
+        // printf("Token count: %d\n", token_count);
+
+        
+        
+        // for (int i = 0; i < token_count - null_count; i++){
+        //     printf("%s\n", tokens[i]);
+        // }
+        //LOG("Got till here %s\n", tokens[0]);
 
         //tokenize_command(...)
         //check_builtins(...)
@@ -138,14 +149,18 @@ int main(void)
         //get struct command_line and execute pipeline from leetify.c
         struct command_line cmd[token_count];
         memset(cmd, 0, sizeof(cmd));
+        int j = 0;
         for(int i = 0; i < token_count; i++){
             // struct command_line temp_command = malloc(sizeof(struct command_line));
-            if(i > 0 && tokens[i] == NULL){
+            if(i > 0 && i < token_count && tokens[i] == NULL){
                 cmd[i - 1].stdout_pipe = true;
+                // i++;
+                continue;
             }
-            cmd[i].tokens = tokens;
-            cmd[i].stdout_pipe = false;
-            cmd[i].stdout_file = NULL;
+            cmd[j].tokens = &tokens[i];
+            cmd[j].stdout_pipe = false;
+            cmd[j].stdout_file = NULL;
+            j++;
            
         }
 
