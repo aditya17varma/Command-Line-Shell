@@ -14,6 +14,8 @@
 #include "ui.h"
 #include "elist.h"
 
+#define DEFAULT_INIT_SZ 10
+
 struct command_line {
     char **tokens;
     bool stdout_pipe;
@@ -93,13 +95,12 @@ char *next_token(char **str_ptr, const char *delim)
     return current_ptr;
 }
 
+struct elist *token_list = elist_create(DEFAULT_INIT_SZ);
+
 int main(void)
 {
     init_ui();
-
-    struct elist *token_list = elist_create(128);
     
-
     char *command;
     while (true) {
         // fprintf(stderr, "%s:$  ", prompt_line());
@@ -114,6 +115,7 @@ int main(void)
         LOG("Input command: %s\n", command);
 
         // char *tokens[10];
+        
         
 		int token_count = 0;
         int null_count = 0;
@@ -133,10 +135,10 @@ int main(void)
             }
             
             // token_count = token_count + 1;
-            printf("Token %02d: '%s'\n", token_count = token_count + 1, elist_get(token_list, token_count));
+            printf("Token %02d: '%s'\n", token_count = token_count + 1, (char *)elist_get(token_list, token_count));
         }
 
-        char **token_list_elements = elist_storage_start(token_list);
+        char **token_list_elements = (char **) elist_storage_start(token_list);
 
 
         token_list_elements[token_count] = (char *) 0;
