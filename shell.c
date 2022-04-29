@@ -22,6 +22,7 @@ struct command_line {
     char *stdout_file;
 };
 
+
 void execute_pipeline(struct command_line *cmds)
 {
     struct command_line *current = cmds;
@@ -95,11 +96,12 @@ char *next_token(char **str_ptr, const char *delim)
     return current_ptr;
 }
 
-struct elist *token_list = elist_create(DEFAULT_INIT_SZ);
+
 
 int main(void)
 {
     init_ui();
+    struct elist *token_list = elist_create(10);
     
     char *command;
     while (true) {
