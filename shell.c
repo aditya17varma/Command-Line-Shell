@@ -101,11 +101,11 @@ char *next_token(char **str_ptr, const char *delim)
 int main(void)
 {
     init_ui();
+
     struct elist *token_list = elist_create(10);
     
     char *command;
     while (true) {
-        // fprintf(stderr, "%s:$  ", prompt_line());
 
         command = read_command();
         if (command == NULL) {
@@ -115,25 +115,20 @@ int main(void)
         }
 
         LOG("Input command: %s\n", command);
-
-        // char *tokens[10];
-        
         
 		int token_count = 0;
         int null_count = 0;
         char *next_tok = command;
         char *curr_tok;
         int null_positions[20];
-        int null_pos = 0;
         while ((curr_tok = next_token(&next_tok, " \t\n\r?")) != NULL) {
             elist_add(token_list, curr_tok);
             // *(tokens + token_count) = curr_tok;
             if (strcmp(curr_tok, "|") == 0){
                 // *(tokens + token_count) = '\0';
                 // token_list_elements[token_count] = '\0';
+                null_positions[null_count] = token_count;
                 null_count++;
-                null_positions[null_pos] = token_count;
-                null_pos++;
             }
             
             token_count = token_count + 1;
@@ -152,10 +147,17 @@ int main(void)
 
         token_list_elements[token_count] = (char *) 0;
 
-        for (int n = 0; n < null_count; n++){
-            int n_pos = null_positions[n];
-            token_list_elements[n_pos] = '\0';
+        if (null_count > 0){
+            for (int n = 0; n < null_count; n++){
+                int n_pos = null_positions[n];
+                token_list_elements[n_pos] = '\0';
+            }
         }
+        
+
+        // for(int l = 0; l < token_count; l++){
+        //     printf("token_list elem: %s\n", token_list_elements[l]);
+        // }
         
 		if (token_list_elements[0] == NULL){
 			continue;
@@ -196,6 +198,8 @@ int main(void)
             wait(&status);
         }
 
+        elist_clear(token_list);
+
         // when tokenizing the command line prompt
         // for each token:
             // if token == "|"
@@ -207,7 +211,9 @@ int main(void)
         /* We are done with command; free it */
 // cleanup:
         free(command);
+        
     }
+    elist_clear(token_list);
 
     return 0;
 }
