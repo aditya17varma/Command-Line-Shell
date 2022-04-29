@@ -22,10 +22,13 @@ struct command_line {
     char *stdout_file;
 };
 
+static int exec_result = 0;
 
-void execute_pipeline(struct command_line *cmds)
+
+int execute_pipeline(struct command_line *cmds)
 {
     struct command_line *current = cmds;
+    exec_result = 0;
     
     if (current->stdout_pipe == true){
         int fds[2];
@@ -36,13 +39,15 @@ void execute_pipeline(struct command_line *cmds)
             //child
             dup2(fds[1], STDOUT_FILENO);
             close(fds[0]);
+            close(fds[1]);
             // close(fds[1]);
-            execvp(current->tokens[0], current->tokens);
+            exec_result = execvp(current->tokens[0], current->tokens);
         } else{
             dup2(fds[0], STDIN_FILENO);
             close(fds[1]);
+            close(fds[0]);
             // close(fds[1]);
-            execute_pipeline(cmds + 1);
+            exec_result = execute_pipeline(cmds + 1);
         }
     } else {
         // dup2(fds[0], STDIN_FILENO);
@@ -53,9 +58,17 @@ void execute_pipeline(struct command_line *cmds)
         }
         // close(fds[0]);
         // close(fds[1]);
-        execvp(current->tokens[0], current->tokens);
+        exec_result = execvp(current->tokens[0], current->tokens);
 
     }
+
+    // if (exec_result != 0){
+    //     prompt_status_bool = false;
+    // } else{
+    //     prompt_status_bool = true;
+    // }
+
+    return exec_result;
 }
 
 char *next_token(char **str_ptr, const char *delim)
@@ -104,12 +117,13 @@ int main(void)
 {
     init_ui();
     hist_init(100);
-
     struct elist *token_list = elist_create(10);
     
     char *command;
     bool keep_shell_running = true;
-    while (keep_shell_running) {
+    while (true) {
+
+        
 
         command = read_command();
         if (command == NULL) {
@@ -172,14 +186,26 @@ int main(void)
 		}
 
         //Check builtins
+        
         printf("first token: %s\n", token_list_elements[0]);
         if(strncmp(token_list_elements[0], "exit", 4) == 0){
             printf("exit clause triggered\n");
             free(command);
-            elist_clear(token_list);
             hist_destroy();
+            elist_clear(token_list);
 			keep_shell_running = false;
-            break;
+            exit(0);
+        } else if (strncmp(token_list_elements[0], "cd", 2) ==0){
+            if(token_count == 1){
+                char *env = getenv("HOME");
+                chdir(env);
+                continue;
+            } else {
+                char *next_path = token_list_elements[1];
+                printf("next_path: %s\n", next_path);
+                chdir(next_path);
+                continue;
+            }
         }
 		// } else if (strncmp(*(cmd[0].tokens), "cd", 2) == 0){
 		// 	//handle cd here
@@ -236,7 +262,15 @@ int main(void)
 
         pid_t child = fork();
         if (child == 0){
-            execute_pipeline(cmd);
+            int exec = execute_pipeline(cmd);
+            if (exec != 0){
+                prompt_status_bool = false;
+            } else {
+                prompt_status_bool = true;
+            }
+            printf("exec_result: %d\n", exec);
+            exit(exec);
+            
         } else {
          int status;
             wait(&status);
@@ -257,7 +291,7 @@ int main(void)
         free(command);
         
     }
-    elist_clear(token_list);
+    //elist_clear(token_list);
 
     return 0;
 }
