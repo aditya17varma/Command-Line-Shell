@@ -142,16 +142,29 @@ int main(void)
 
         char **token_list_elements = (char **) elist_storage_start(token_list);
 
+        printf("token_count: %d\n", token_count);
+        printf("Null count: %d\n", null_count);
 
-        token_list_elements[token_count] = (char *) 0;
+        for (int w = 0; w < null_count; w++){
+            printf("Null at: %d\n", null_positions[w]);
+        }
+
+        printf("%s\n", token_list_elements);
+
+        for(int g = 0; g < token_count; g++){
+            printf("token_list: %s\n", token_list_elements[g]);
+        }
+
+
+        // token_list_elements[token_count] = (char *) 0;
 
         
 
-        for(int s = 0; s < token_count; s++){
-            printf("%s\n", token_list_elements[s]);
-        }
+        // for(int s = 0; s < token_count; s++){
+        //     printf("%s\n", token_list_elements[s]);
+        // }
 
-        for (int n = 0; n < null_pos; n++){
+        for (int n = 0; n < null_count; n++){
             int n_pos = null_positions[n];
             token_list_elements[n_pos] = '\0';
             // tokens_arr[n_pos] = '\0';
@@ -160,9 +173,9 @@ int main(void)
         
 		// *(tokens + token_count) = (char *) 0;
         
-		if (token_list_elements[0] == NULL){
-			continue;
-		}
+		// if (token_list_elements[0] == NULL){
+		// 	continue;
+		// }
 
         // printf("Token count: %d\n", token_count);
 
