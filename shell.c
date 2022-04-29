@@ -96,6 +96,8 @@ char *next_token(char **str_ptr, const char *delim)
     return current_ptr;
 }
 
+// void check_builtins()
+
 
 
 int main(void)
@@ -106,7 +108,8 @@ int main(void)
     struct elist *token_list = elist_create(10);
     
     char *command;
-    while (true) {
+    bool keep_shell_running = true;
+    while (keep_shell_running) {
 
         command = read_command();
         if (command == NULL) {
@@ -136,8 +139,8 @@ int main(void)
                 null_count++;
             }
             
-            token_count = token_count + 1;
-            // printf("Token %02d: '%s'\n", token_count = token_count + 1, (char *)elist_get(token_list, token_count));
+            // token_count = token_count + 1;
+            printf("Token %02d: '%s'\n", token_count = token_count + 1, (char *)elist_get(token_list, token_count));
         }
 
         char **token_list_elements = (char **) elist_storage_start(token_list);
@@ -168,6 +171,26 @@ int main(void)
 			continue;
 		}
 
+        //Check builtins
+        printf("first token: %s\n", token_list_elements[0]);
+        if(strncmp(token_list_elements[0], "exit", 4) == 0){
+            printf("exit clause triggered\n");
+            free(command);
+            elist_clear(token_list);
+            hist_destroy();
+			keep_shell_running = false;
+            break;
+        }
+		// } else if (strncmp(*(cmd[0].tokens), "cd", 2) == 0){
+		// 	//handle cd here
+            
+		// 	chdir(*(cmd[0].tokens));
+		// 	continue;
+		// } else if (strcmp(*(cmd[0].tokens), "history") == 0){
+        //     hist_print();
+        //     continue;
+        // } 
+
         //tokenize_command(...)
         //check_builtins(...)
         //execute_stuff(...)
@@ -180,10 +203,11 @@ int main(void)
         //first command
         // cmd[j].tokens = &tokens[0];
         
-        cmd[j].tokens = &token_list_elements[0];
+        cmd[j].tokens = token_list_elements;
         cmd[j].stdout_pipe = false;
         cmd[j].stdout_file = NULL;
         j++;
+        // printf("j:%d --> %s\n", j, *(cmd[j - 1].tokens));
         for (int k = 0; k < null_count; k++){
             int nulls = null_positions[k];
             // cmd[j].tokens = &tokens[nulls + 1];
@@ -193,7 +217,22 @@ int main(void)
 
             cmd[j - 1].stdout_pipe = true;
             j++;
+            // printf("j:%d --> %s\n", j, *(cmd[j - 1].tokens));
         }
+
+        // char *first_token = *(cmd[0].tokens);
+        // printf("first_token: %s\n", first_token);
+        // printf("first_token + 1: %s\n", *(cmd[0].tokens) + 1);
+        // printf("j: %d\n", j);
+        // printf("strlen: %ld\n", strlen(*(cmd[0].tokens)));
+        // if(strcmp(first_token, "exit") == 0){
+		// 	printf("strcmp with exit works\n");
+        // }
+        // if (j > 1){
+        //     printf("cmd[1].tokens + 2: %s\n", *(cmd[1].tokens));
+        // }
+
+
 
         pid_t child = fork();
         if (child == 0){
