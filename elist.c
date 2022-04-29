@@ -52,6 +52,10 @@ struct elist *elist_create(size_t list_sz)
 
 }
 
+void * *elist_storage_start(struct elist *list){
+    return list->element_storage;
+}
+
 void elist_destroy(struct elist *list)
 {
     free(list->element_storage);

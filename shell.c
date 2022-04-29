@@ -43,6 +43,7 @@ void execute_pipeline(struct command_line *cmds)
         }
     } else {
         // dup2(fds[0], STDIN_FILENO);
+        // dup2(fds[1], 1);
         if (current->stdout_file != NULL){
             int output = open(current->stdout_file, O_CREAT | O_WRONLY, 0666);
             dup2(output, 1);
@@ -96,9 +97,12 @@ int main(void)
 {
     init_ui();
 
+    struct elist *token_list = elist_create(128);
+    
+
     char *command;
     while (true) {
-        printf("%s:$  ", prompt_line());
+        // fprintf(stderr, "%s:$  ", prompt_line());
 
         command = read_command();
         if (command == NULL) {
@@ -109,59 +113,80 @@ int main(void)
 
         LOG("Input command: %s\n", command);
 
-        char *tokens[10];
-        // struct elist *command_list = elist_create(128);
+        // char *tokens[10];
+        
 		int token_count = 0;
         int null_count = 0;
         char *next_tok = command;
         char *curr_tok;
+        int null_positions[20];
+        int null_pos = 0;
         while ((curr_tok = next_token(&next_tok, " \t\n\r?")) != NULL) {
-            // struct command_line temp_command = malloc(sizeof(struct command_line));
-            tokens[token_count] = curr_tok;
+            elist_add(token_list, curr_tok);
+            // *(tokens + token_count) = curr_tok;
             if (strcmp(curr_tok, "|") == 0){
-                tokens[token_count] = '\0';
+                // *(tokens + token_count) = '\0';
+                // token_list_elements[token_count] = '\0';
                 null_count++;
+                null_positions[null_pos] = token_count;
+                null_pos++;
             }
-            // strcpy(temp_command->tokens, curr_tok);
-            // temp_command->stdout_pipe = true;
-            // temp_command->stdout_file = NULL;
-            printf("Token %02d: '%s'\n", token_count = token_count + 1, tokens[token_count]);
+            
+            // token_count = token_count + 1;
+            printf("Token %02d: '%s'\n", token_count = token_count + 1, elist_get(token_list, token_count));
         }
-        
-		tokens[token_count] = (char *) 0;
-        
-		if (tokens[0] == NULL){
-			continue;
-		}
-        // printf("Token count: %d\n", token_count);
+
+        char **token_list_elements = elist_storage_start(token_list);
+
+
+        token_list_elements[token_count] = (char *) 0;
 
         
+
+        for(int s = 0; s < token_count; s++){
+            printf("%s\n", token_list_elements[s]);
+        }
+
+        for (int n = 0; n < null_pos; n++){
+            int n_pos = null_positions[n];
+            token_list_elements[n_pos] = '\0';
+            // tokens_arr[n_pos] = '\0';
+            // token_list->element_storage[n_pos] = '\0';
+        }
         
-        // for (int i = 0; i < token_count - null_count; i++){
-        //     printf("%s\n", tokens[i]);
-        // }
-        //LOG("Got till here %s\n", tokens[0]);
+		// *(tokens + token_count) = (char *) 0;
+        
+		if (token_list_elements[0] == NULL){
+			continue;
+		}
+
+        // printf("Token count: %d\n", token_count);
 
         //tokenize_command(...)
         //check_builtins(...)
         //execute_stuff(...)
 
         //get struct command_line and execute pipeline from leetify.c
-        struct command_line cmd[token_count];
+        struct command_line cmd[token_count - null_count];
         memset(cmd, 0, sizeof(cmd));
+        
         int j = 0;
-        for(int i = 0; i < token_count; i++){
-            // struct command_line temp_command = malloc(sizeof(struct command_line));
-            if(i > 0 && i < token_count && tokens[i] == NULL){
-                cmd[i - 1].stdout_pipe = true;
-                // i++;
-                continue;
-            }
-            cmd[j].tokens = &tokens[i];
+        //first command
+        // cmd[j].tokens = &tokens[0];
+        
+        cmd[j].tokens = token_list_elements[0];
+        cmd[j].stdout_pipe = false;
+        cmd[j].stdout_file = NULL;
+        j++;
+        for (int k = 0; k < null_count; k++){
+            int nulls = null_positions[k];
+            // cmd[j].tokens = &tokens[nulls + 1];
+            cmd[j].tokens = token_list_elements[nulls + 1];
             cmd[j].stdout_pipe = false;
             cmd[j].stdout_file = NULL;
+
+            cmd[j - 1].stdout_pipe = true;
             j++;
-           
         }
 
         pid_t child = fork();
