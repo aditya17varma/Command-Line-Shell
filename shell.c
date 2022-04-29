@@ -101,6 +101,7 @@ char *next_token(char **str_ptr, const char *delim)
 int main(void)
 {
     init_ui();
+    hist_init(100);
 
     struct elist *token_list = elist_create(10);
     
@@ -115,6 +116,10 @@ int main(void)
         }
 
         LOG("Input command: %s\n", command);
+
+        char *command_dup = strdup(command);
+        LOG("commnad dup: %s\n", command_dup);
+        hist_add(command_dup);
         
 		int token_count = 0;
         int null_count = 0;

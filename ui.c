@@ -172,8 +172,9 @@ int prompt_status(void)
 unsigned int prompt_cmd_num(void)
 {
     //use last_cnum from history.c to get appropriate number
-    int num = 100;
-    return num;
+    int hist_num = hist_last_cnum();
+    // int num = 100;
+    return hist_num;
 }
 
 char *read_command(void)
