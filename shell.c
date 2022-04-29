@@ -136,48 +136,30 @@ int main(void)
                 null_pos++;
             }
             
-            // token_count = token_count + 1;
-            printf("Token %02d: '%s'\n", token_count = token_count + 1, (char *)elist_get(token_list, token_count));
+            token_count = token_count + 1;
+            // printf("Token %02d: '%s'\n", token_count = token_count + 1, (char *)elist_get(token_list, token_count));
         }
 
         char **token_list_elements = (char **) elist_storage_start(token_list);
 
-        printf("token_count: %d\n", token_count);
-        printf("Null count: %d\n", null_count);
+        // printf("token_count: %d\n", token_count);
+        // printf("Null count: %d\n", null_count);
 
-        for (int w = 0; w < null_count; w++){
-            printf("Null at: %d\n", null_positions[w]);
-        }
-
-        printf("%s\n", token_list_elements);
-
-        for(int g = 0; g < token_count; g++){
-            printf("token_list: %s\n", token_list_elements[g]);
-        }
-
-
-        // token_list_elements[token_count] = (char *) 0;
-
-        
-
-        // for(int s = 0; s < token_count; s++){
-        //     printf("%s\n", token_list_elements[s]);
+        // for (int w = 0; w < null_count; w++){
+        //     printf("Null at: %d\n", null_positions[w]);
         // }
+
+
+        token_list_elements[token_count] = (char *) 0;
 
         for (int n = 0; n < null_count; n++){
             int n_pos = null_positions[n];
             token_list_elements[n_pos] = '\0';
-            // tokens_arr[n_pos] = '\0';
-            // token_list->element_storage[n_pos] = '\0';
         }
         
-		// *(tokens + token_count) = (char *) 0;
-        
-		// if (token_list_elements[0] == NULL){
-		// 	continue;
-		// }
-
-        // printf("Token count: %d\n", token_count);
+		if (token_list_elements[0] == NULL){
+			continue;
+		}
 
         //tokenize_command(...)
         //check_builtins(...)
@@ -191,14 +173,14 @@ int main(void)
         //first command
         // cmd[j].tokens = &tokens[0];
         
-        cmd[j].tokens = token_list_elements[0];
+        cmd[j].tokens = &token_list_elements[0];
         cmd[j].stdout_pipe = false;
         cmd[j].stdout_file = NULL;
         j++;
         for (int k = 0; k < null_count; k++){
             int nulls = null_positions[k];
             // cmd[j].tokens = &tokens[nulls + 1];
-            cmd[j].tokens = token_list_elements[nulls + 1];
+            cmd[j].tokens = &token_list_elements[nulls + 1];
             cmd[j].stdout_pipe = false;
             cmd[j].stdout_file = NULL;
 
