@@ -55,6 +55,7 @@ void hist_print(void)
             printf("%d %s\n", temp_cmd_num, temp_cmd);
         }
     }
+    fflush(stdout);
 
 }
 

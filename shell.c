@@ -24,11 +24,13 @@ struct command_line {
 
 static int exec_result = 0;
 
+static bool keep_shell_running;
+
 
 int execute_pipeline(struct command_line *cmds)
 {
     struct command_line *current = cmds;
-    exec_result = 0;
+    // exec_result = 0;
     
     if (current->stdout_pipe == true){
         int fds[2];
@@ -56,17 +58,10 @@ int execute_pipeline(struct command_line *cmds)
             int output = open(current->stdout_file, O_CREAT | O_WRONLY, 0666);
             dup2(output, 1);
         }
-        // close(fds[0]);
-        // close(fds[1]);
+        
         exec_result = execvp(current->tokens[0], current->tokens);
 
     }
-
-    // if (exec_result != 0){
-    //     prompt_status_bool = false;
-    // } else{
-    //     prompt_status_bool = true;
-    // }
 
     return exec_result;
 }
@@ -110,8 +105,14 @@ char *next_token(char **str_ptr, const char *delim)
 }
 
 // void check_builtins()
+int change_cd(char *path){
+    return chdir(path);
+}
 
-
+int exit_shell(void){
+    keep_shell_running = false;
+    return 0;
+}
 
 int main(void)
 {
@@ -120,10 +121,8 @@ int main(void)
     struct elist *token_list = elist_create(10);
     
     char *command;
-    bool keep_shell_running = true;
-    while (true) {
-
-        
+    keep_shell_running = true;
+    while (keep_shell_running) {
 
         command = read_command();
         if (command == NULL) {
@@ -132,10 +131,15 @@ int main(void)
             break;
         }
 
+        //if #starts command
+        if(strncmp(command, "#", 1) == 0){
+            break;
+        }
+
         LOG("Input command: %s\n", command);
 
         char *command_dup = strdup(command);
-        LOG("commnad dup: %s\n", command_dup);
+        // LOG("commnad dup: %s\n", command_dup);
         hist_add(command_dup);
         
 		int token_count = 0;
@@ -153,8 +157,8 @@ int main(void)
                 null_count++;
             }
             
-            // token_count = token_count + 1;
-            printf("Token %02d: '%s'\n", token_count = token_count + 1, (char *)elist_get(token_list, token_count));
+            token_count = token_count + 1;
+            // printf("Token %02d: '%s'\n", token_count = token_count + 1, (char *)elist_get(token_list, token_count));
         }
 
         char **token_list_elements = (char **) elist_storage_start(token_list);
@@ -186,97 +190,108 @@ int main(void)
 		}
 
         //Check builtins
+        char *builtins[] = {"cd", "exit", "history", "!"};
+        char *first_token = token_list_elements[0];
         
-        printf("first token: %s\n", token_list_elements[0]);
-        if(strncmp(token_list_elements[0], "exit", 4) == 0){
-            printf("exit clause triggered\n");
-            free(command);
-            hist_destroy();
-            elist_clear(token_list);
-			keep_shell_running = false;
-            exit(0);
-        } else if (strncmp(token_list_elements[0], "cd", 2) ==0){
-            if(token_count == 1){
-                char *env = getenv("HOME");
-                chdir(env);
-                continue;
-            } else {
-                char *next_path = token_list_elements[1];
-                printf("next_path: %s\n", next_path);
-                chdir(next_path);
-                continue;
+        int builtin_indx = -1;
+        for (int b = 0; b < 4; b++){
+            if (strncmp(builtins[b], first_token, strlen(builtins[b])) == 0){
+                LOG("builtin: %s %s\n", builtins[b], first_token);
+                builtin_indx = b;
+                break;
             }
         }
-		// } else if (strncmp(*(cmd[0].tokens), "cd", 2) == 0){
-		// 	//handle cd here
+
+        if (builtin_indx == 1){
+            //exit
+            // printf("exit clause triggered\n");
+            // free(command);
+            hist_destroy();
+            elist_clear(token_list);
+            exit_shell();
+            // exit(0);
+        } else if (builtin_indx == 0) {
+            //cd
+            if(token_count == 1){
+                char *env = getenv("HOME");
+                // if(chdir(env) != 0){
+                //     perror("cd to home failed\n");
+                // }
+                change_cd(env);
+                // continue;
+            } else {
+                char *next_path = token_list_elements[1];
+                LOG("next_path: %s\n", next_path);
+                // if(chdir(next_path) != 0){
+				//     prompt_status_bool = false;
+				//     perror("cd failed");
+			    // }
+                change_cd(next_path);
+			    // continue;
+            }
+        } else if (builtin_indx == 2){
+            //history
+            hist_print();
+        } else if (builtin_indx == 3){
+            // ! stuff
+        }
+
+        else {
+            //get struct command_line and execute pipeline from leetify.c
+            struct command_line cmd[token_count - null_count];
+            memset(cmd, 0, sizeof(cmd));
             
-		// 	chdir(*(cmd[0].tokens));
-		// 	continue;
-		// } else if (strcmp(*(cmd[0].tokens), "history") == 0){
-        //     hist_print();
-        //     continue;
-        // } 
+            int j = 0;
+            //first command
+            // cmd[j].tokens = &tokens[0];
+            
+            cmd[j].tokens = token_list_elements;
+            cmd[j].stdout_pipe = false;
+            cmd[j].stdout_file = NULL;
+            j++;
+            // printf("j:%d --> %s\n", j, *(cmd[j - 1].tokens));
+            for (int k = 0; k < null_count; k++){
+                int nulls = null_positions[k];
+                // cmd[j].tokens = &tokens[nulls + 1];
+                cmd[j].tokens = &token_list_elements[nulls + 1];
+                cmd[j].stdout_pipe = false;
+                cmd[j].stdout_file = NULL;
+
+                cmd[j - 1].stdout_pipe = true;
+                j++;
+                // printf("j:%d --> %s\n", j, *(cmd[j - 1].tokens));
+            }
+
+            pid_t child = fork();
+            if (child == 0){
+                int exec = 0;
+                exec = execute_pipeline(cmd);
+                LOG("exec: %d\n", exec);
+
+                //TODO FIX PROMPT EMOJI CHANGE
+                if (exec != 0){
+                    prompt_status_bool = false;
+                    LOG("promp status bool: %d\n", prompt_status_bool);
+                } else {
+                    prompt_status_bool = true;
+                    LOG("promp status bool: %d\n", prompt_status_bool);
+                }
+                LOG("exec_result: %d\n", exec);
+                exit(exec);
+                
+            } else {
+                int status;
+                wait(&status);
+            }
+
+        }
+        elist_clear(token_list);
 
         //tokenize_command(...)
         //check_builtins(...)
         //execute_stuff(...)
 
-        //get struct command_line and execute pipeline from leetify.c
-        struct command_line cmd[token_count - null_count];
-        memset(cmd, 0, sizeof(cmd));
         
-        int j = 0;
-        //first command
-        // cmd[j].tokens = &tokens[0];
-        
-        cmd[j].tokens = token_list_elements;
-        cmd[j].stdout_pipe = false;
-        cmd[j].stdout_file = NULL;
-        j++;
-        // printf("j:%d --> %s\n", j, *(cmd[j - 1].tokens));
-        for (int k = 0; k < null_count; k++){
-            int nulls = null_positions[k];
-            // cmd[j].tokens = &tokens[nulls + 1];
-            cmd[j].tokens = &token_list_elements[nulls + 1];
-            cmd[j].stdout_pipe = false;
-            cmd[j].stdout_file = NULL;
-
-            cmd[j - 1].stdout_pipe = true;
-            j++;
-            // printf("j:%d --> %s\n", j, *(cmd[j - 1].tokens));
-        }
-
-        // char *first_token = *(cmd[0].tokens);
-        // printf("first_token: %s\n", first_token);
-        // printf("first_token + 1: %s\n", *(cmd[0].tokens) + 1);
-        // printf("j: %d\n", j);
-        // printf("strlen: %ld\n", strlen(*(cmd[0].tokens)));
-        // if(strcmp(first_token, "exit") == 0){
-		// 	printf("strcmp with exit works\n");
-        // }
-        // if (j > 1){
-        //     printf("cmd[1].tokens + 2: %s\n", *(cmd[1].tokens));
-        // }
-
-
-
-        pid_t child = fork();
-        if (child == 0){
-            int exec = execute_pipeline(cmd);
-            if (exec != 0){
-                prompt_status_bool = false;
-            } else {
-                prompt_status_bool = true;
-            }
-            printf("exec_result: %d\n", exec);
-            exit(exec);
-            
-        } else {
-         int status;
-            wait(&status);
-        }
-
-        elist_clear(token_list);
 
         // when tokenizing the command line prompt
         // for each token:
@@ -291,7 +306,6 @@ int main(void)
         free(command);
         
     }
-    //elist_clear(token_list);
 
     return 0;
 }

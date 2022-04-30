@@ -10,6 +10,8 @@
 
 void init_ui(void);
 
+extern bool prompt_status_bool;
+
 char *prompt_line(void);
 char *prompt_username(void);
 char *prompt_hostname(void);

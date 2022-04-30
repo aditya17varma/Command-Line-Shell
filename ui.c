@@ -16,6 +16,7 @@ static bool scripting = false;
 static char hostname[256];
 static char cwd[256];
 static char spliced_cwd[256];
+bool prompt_status_bool = true;
 // struct passwd pwd;
 
 static int readline_init(void);
@@ -163,10 +164,7 @@ char *prompt_cwd(void)
 
 int prompt_status(void)
 {
-    bool tempF = false;
-    bool tempT = true;
-    // printf("true: %i false: %i\n", tempT, tempF);
-    return tempT;
+    return prompt_status_bool;
 }
 
 unsigned int prompt_cmd_num(void)

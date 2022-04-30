@@ -1,8 +1,5 @@
 # Project 3: Command Line Shell
 
-See: https://www.cs.usfca.edu/~mmalensek/cs521/assignments/project-3.html
-
-TODO: Remove the link above. Your README should not depend on a link to the spec.
 
 TODO: Replace this section with a short (1-3 paragraph) description of the project. What it does, how it does it, and any features that stand out. If you ever need to refer back to this project, the description should jog your memory.
 
@@ -63,4 +60,3 @@ make grade
 ## Demo Run
 
 TODO: add a screenshot / text of a demo run of your program here.
-
