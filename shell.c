@@ -202,7 +202,6 @@ int main(void)
         char *command_dup = strdup(command);
         // LOG("commnad dup: %s\n", command_dup);
         hist_add(command_dup);
-        free(command_dup);
         
 		int token_count = 0;
         int null_count = 0;
@@ -467,7 +466,6 @@ int main(void)
         }
         elist_clear(token_list);
         free(command);
-        free_line();
         
 
         //tokenize_command(...)
@@ -489,9 +487,7 @@ int main(void)
         
         
     }
-    free(command);
-    elist_destroy(token_list);
-    hist_destroy();
+    
 
     return 0;
 }
