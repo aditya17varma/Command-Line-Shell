@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <pwd.h>
 #include <sys/types.h>
+#include <limits.h>
 
 #include "history.h"
 #include "logger.h"
@@ -130,7 +131,11 @@ char *prompt_hostname(void)
     // create a static variable to store the hostname
     // 
     // char hostname[10];
-    gethostname(hostname, 10);
+    static char hostname[HOST_NAME_MAX + 1];
+    if (gethostname(hostname, HOST_NAME_MAX) != 0){
+        return "unknown host";
+    }
+    //gethostname(hostname, 10);
     // printf("The hostname is: %s\n", hostname);
     return hostname;
 }
@@ -186,7 +191,7 @@ char *read_command(void)
     //implement scripting support here
     //if we are receiving commands from a user, then do the following:
     if (scripting){
-        
+
         size_t buf_sz = 0;
         ssize_t read_sz = getline(&line, &buf_sz, stdin);
         if (read_sz == -1){
