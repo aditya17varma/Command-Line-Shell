@@ -193,6 +193,7 @@ char *read_command(void)
     } else {
         char *prompt = prompt_line();
         char *command = readline(prompt);
+        // LOG("got command in ui %s\n", command);
         free(prompt);
         return command;
     }

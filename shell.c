@@ -114,11 +114,18 @@ int exit_shell(void){
     return 0;
 }
 
+void sigint_handler(int signo){
+    LOGP("ctrl + C doesn't kill me");
+}
+
+
 int main(void)
 {
     init_ui();
     hist_init(100);
     struct elist *token_list = elist_create(10);
+
+    signal(SIGINT, sigint_handler);
     
     char *command;
     keep_shell_running = true;
@@ -128,11 +135,6 @@ int main(void)
         if (command == NULL) {
             // goto cleanup;
             free(command);
-            break;
-        }
-
-        //if #starts command
-        if(strncmp(command, "#", 1) == 0){
             break;
         }
 
@@ -155,9 +157,14 @@ int main(void)
                 // token_list_elements[token_count] = '\0';
                 null_positions[null_count] = token_count;
                 null_count++;
+                // token_count = token_count + 1;
             }
-            
+            // else if (strncmp(curr_tok, "#", 1) == 0){
+            //     token_count++;
+            //     // break;
+            // } 
             token_count = token_count + 1;
+            
             // printf("Token %02d: '%s'\n", token_count = token_count + 1, (char *)elist_get(token_list, token_count));
         }
 
@@ -186,6 +193,7 @@ int main(void)
         // }
         
 		if (token_list_elements[0] == NULL){
+            // LOGP("token list[0] check");
 			continue;
 		}
 
@@ -209,6 +217,7 @@ int main(void)
             hist_destroy();
             elist_clear(token_list);
             exit_shell();
+            break;
             // exit(0);
         } else if (builtin_indx == 0) {
             //cd
@@ -277,7 +286,7 @@ int main(void)
                     LOG("promp status bool: %d\n", prompt_status_bool);
                 }
                 LOG("exec_result: %d\n", exec);
-                exit(exec);
+                // exit(exec);
                 
             } else {
                 int status;
