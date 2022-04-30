@@ -1,37 +1,27 @@
 # Project 3: Command Line Shell
 
 
-TODO: Replace this section with a short (1-3 paragraph) description of the project. What it does, how it does it, and any features that stand out. If you ever need to refer back to this project, the description should jog your memory.
+This project is an attempt to build a shell using the concpets learnt so far.
+The main concepts used are: elastic array, pipes, forks, signal handling, and commincicating between multiple files.
+The shell uses execvp to execute the commands the user passes in.
+Piping is supported.
+
+All the user commands are saved in an array, which can be accessed with a builtin function.
+Builtins supported are: "exit", "cd", "!", "history".
 
 ## Building
-
-TODO: Update this section as necessary.
-
 To compile and run:
 
 ```bash
 make
-./program_name
-```
-
-## Program Options
-
-TODO: Provide an overview of program options and their descriptions, if applicable. If the program does not accept any options, delete this section.
-
-```bash
-$ ./some_prog -h
-Usage: ./some_prog [-z] [-d dir]
-
-Options:
-    * -d              Directory to load information from.
-    * -z              Enable super secret 'Z' mode
+./endsWithSH
 ```
 
 ## Included Files
 
-* **file1.c** -- TODO: Describe any major program modules here.
-* **file2.h** -- TODO: You don't need to include utilities, makefiles, etc.
-* **file3.asm** -- TODO: Just the most important files! (And don't forget their descriptions)
+* **shell.c** -- The main shell function, tokenizes and executes commands received from ui.c
+* **ui.c** -- Sets up the user interface of the shell, parses input into commands and passes them into shell.c
+* **history.c** -- Contains the elastic array that stores all the commands.
 
 ## Testing
 
@@ -59,4 +49,60 @@ make grade
 
 ## Demo Run
 
-TODO: add a screenshot / text of a demo run of your program here.
+****************************************************************************
+
+
+        ****  ARE YOU READY TO ENTER THE DRAGON??  ****
+
+
+                                ^    ^
+                               / \  //\ 
+                 |\___/|      /   \//  \ 
+                 /0  0  \__  /    //  | \ \ 
+                /     /  \/_/    //   |  \  \ 
+                @_^_@'/   \/_   //    |   \   \ 
+                //_^_/     \/_ //     |    \    \ 
+             ( //) |        \///      |     \     \ 
+           ( / /) _|_ /   )  //       |      \     _\ 
+         ( // /) '/,_ _ _/  ( ; -.    |    _ _\.-~        .-~~~^-. 
+        (( / / )) ,-{        _      `-.|.-~-.           .~         `. 
+      (( // / ))  '/\      /                 ~-. _ .-~      .-~^-.  \ 
+      (( /// ))      `.   {            }                   /      \  \ 
+       (( / ))     .----~-.\        \-'                 .~         \  `. \^-. 
+                  ///.----..>        \             _ -~             `.  ^-`  ^-__ 
+                    ///-._ _ _ _ _ _ _}^ - - - - ~                     ~-- ,.-~ 
+                                                                        /.-~
+
+****************************************************************************
+ui.c:56:init_ui(): Initializing UI...
+ui.c:59:init_ui(): Setting locale: en_US.UTF-8
+elist.c:45:elist_create(): Created new elist. Size = 0, capacity = 100, start address = 0x55d30f6d3410
+elist.c:45:elist_create(): Created new elist. Size = 0, capacity = 10, start address = 0x55d30f6d3760
+>>-[😌]-[0]-[avkunatharaju@TheSevenCs:~/P3-aditya17varma]-> ls
+shell.c:200:main(): Input command: ls
+a.out  elist.c  elist.h  elist.o  endsWithSH  history.c  history.h  history.o  libshell.so  logger.h  Makefile  README.md  shell.c  shell.o  test-outputs  tests  ui.c  ui.h  ui.o
+>>-[😌]-[1]-[avkunatharaju@TheSevenCs:~/P3-aditya17varma]-> ls | sort
+shell.c:200:main(): Input command: ls | sort
+a.out
+elist.c
+elist.h
+elist.o
+endsWithSH
+history.c
+history.h
+history.o
+libshell.so
+logger.h
+Makefile
+README.md
+shell.c
+shell.o
+test-outputs
+tests
+ui.c
+ui.h
+ui.o
+>>-[😌]-[2]-[avkunatharaju@TheSevenCs:~/P3-aditya17varma]-> cd
+shell.c:200:main(): Input command: cd
+shell.c:265:main(): builtin: cd cd
+>>-[😌]-[3]-[avkunatharaju@TheSevenCs:~]-> 

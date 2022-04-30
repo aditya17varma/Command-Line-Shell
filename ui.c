@@ -17,7 +17,8 @@ static char hostname[256];
 static char cwd[256];
 static char spliced_cwd[256];
 bool prompt_status_bool = true;
-// struct passwd pwd;
+
+static char *line = NULL;
 
 static int readline_init(void);
 
@@ -69,6 +70,10 @@ void init_ui(void)
 void destroy_ui(void)
 {
     // TODO cleanup code, if necessary
+}
+
+void free_line(void){
+    free(line);
 }
 
 char *prompt_line(void)
@@ -181,7 +186,7 @@ char *read_command(void)
     //implement scripting support here
     //if we are receiving commands from a user, then do the following:
     if (scripting){
-        char *line = NULL;
+        
         size_t buf_sz = 0;
         ssize_t read_sz = getline(&line, &buf_sz, stdin);
         if (read_sz == -1){

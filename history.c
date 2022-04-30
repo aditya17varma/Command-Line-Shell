@@ -5,6 +5,7 @@
 
 #include "history.h"
 #include "elist.h"
+#include "logger.h"
 
 
 static struct elist *list;
@@ -14,6 +15,7 @@ struct hist_entry {
 };
 
 static int counter = 0;
+//remember command numbers start at 1
 
 void hist_init(unsigned int limit)
 {
@@ -39,12 +41,12 @@ void hist_add(const char *cmd)
 void hist_print(void)
 {
     if (counter > 100){
-        int begin = counter - 100 + 1;
+        int begin = counter - 100;
         for (int j = begin; j < counter; j++){
             struct hist_entry *temp = elist_get(list, j);
             int temp_cmd_num = temp->cmd_number;
             char* temp_cmd = temp->comd;
-            printf("%d %s\n", temp_cmd_num, temp_cmd);
+            printf("%d %s\n", temp_cmd_num + 1, temp_cmd);
         }
 
     } else {
@@ -52,19 +54,21 @@ void hist_print(void)
             struct hist_entry *temp = elist_get(list, i);
             int temp_cmd_num = temp->cmd_number;
             char* temp_cmd = temp->comd;
-            printf("%d %s\n", temp_cmd_num, temp_cmd);
+            printf("%d %s\n", temp_cmd_num + 1, temp_cmd);
         }
     }
     fflush(stdout);
-
 }
 
 const char *hist_search_prefix(char *prefix)
 {
     // TODO: Retrieves the most recent command starting with 'prefix', or NULL
     // if no match found.
-    for(int i = counter; i > 0; i--){
+    for(int i = counter - 1; i > 0; i--){
         struct hist_entry *temp = elist_get(list, i);
+        LOG("prefix: %s\n", prefix);
+        LOG("temp comd: %s\n", temp->comd);
+        LOG("strlen prefix: %zu\n", strlen(prefix));
         if (strncmp(prefix, temp->comd, strlen(prefix)) == 0){
             return temp->comd;
         }
@@ -78,7 +82,7 @@ const char *hist_search_cnum(int command_number)
     // TODO: Retrieves a particular command number. Return NULL if no match
     // found.
     if (command_number <= counter){
-        struct hist_entry *temp = elist_get(list, command_number);
+        struct hist_entry *temp = elist_get(list, command_number - 1);
         return temp->comd;
     }
 

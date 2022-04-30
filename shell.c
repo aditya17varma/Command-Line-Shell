@@ -20,6 +20,8 @@ struct command_line {
     char **tokens;
     bool stdout_pipe;
     char *stdout_file;
+    char *stdin_file;
+    bool stdout_append;
 };
 
 static int exec_result = 0;
@@ -44,6 +46,8 @@ int execute_pipeline(struct command_line *cmds)
             close(fds[1]);
             // close(fds[1]);
             exec_result = execvp(current->tokens[0], current->tokens);
+            close(fileno(stdin));
+            exit(EXIT_FAILURE);
         } else{
             dup2(fds[0], STDIN_FILENO);
             close(fds[1]);
@@ -60,6 +64,8 @@ int execute_pipeline(struct command_line *cmds)
         }
         
         exec_result = execvp(current->tokens[0], current->tokens);
+        close(fileno(stdin));
+        exit(EXIT_FAILURE);
 
     }
 
@@ -119,6 +125,56 @@ void sigint_handler(int signo){
 }
 
 
+char **tokenize_command(char *comm){
+    struct elist *token_list = elist_create(10);
+
+    int token_count = 0;
+    int null_count = 0;
+    char *next_tok = comm;
+    char *curr_tok;
+    int null_positions[20];
+    while ((curr_tok = next_token(&next_tok, " \t\n\r?")) != NULL) {
+        
+        // *(tokens + token_count) = curr_tok;
+        if (strcmp(curr_tok, "|") == 0){
+            // *(tokens + token_count) = '\0';
+            // token_list_elements[token_count] = '\0';
+            null_positions[null_count] = token_count;
+            null_count++;
+            // token_count = token_count + 1;
+        }
+        else if (strncmp(curr_tok, "#", 1) == 0){
+            //change here
+            break;
+        } 
+        elist_add(token_list, curr_tok);
+        token_count = token_count + 1;
+        
+        // printf("Token %02d: '%s'\n", token_count = token_count + 1, (char *)elist_get(token_list, token_count));
+    }
+
+    char **tokens_elements = (char **) elist_storage_start(token_list);
+
+    // printf("token_count: %d\n", token_count);
+    // printf("Null count: %d\n", null_count);
+
+    // for (int w = 0; w < null_count; w++){
+    //     printf("Null at: %d\n", null_positions[w]);
+    // }
+
+
+    tokens_elements[token_count] = (char *) 0;
+
+    if (null_count > 0){
+        for (int n = 0; n < null_count; n++){
+            int n_pos = null_positions[n];
+            tokens_elements[n_pos] = '\0';
+        }
+    }
+
+    return tokens_elements;
+}
+
 int main(void)
 {
     init_ui();
@@ -137,12 +193,16 @@ int main(void)
             free(command);
             break;
         }
+        if (strlen(command) == 0){
+            continue;
+        }
 
         LOG("Input command: %s\n", command);
 
         char *command_dup = strdup(command);
         // LOG("commnad dup: %s\n", command_dup);
         hist_add(command_dup);
+        free(command_dup);
         
 		int token_count = 0;
         int null_count = 0;
@@ -150,7 +210,7 @@ int main(void)
         char *curr_tok;
         int null_positions[20];
         while ((curr_tok = next_token(&next_tok, " \t\n\r?")) != NULL) {
-            elist_add(token_list, curr_tok);
+            
             // *(tokens + token_count) = curr_tok;
             if (strcmp(curr_tok, "|") == 0){
                 // *(tokens + token_count) = '\0';
@@ -159,10 +219,11 @@ int main(void)
                 null_count++;
                 // token_count = token_count + 1;
             }
-            // else if (strncmp(curr_tok, "#", 1) == 0){
-            //     token_count++;
-            //     // break;
-            // } 
+            else if (strncmp(curr_tok, "#", 1) == 0){
+                //change here
+                break;
+            } 
+            elist_add(token_list, curr_tok);
             token_count = token_count + 1;
             
             // printf("Token %02d: '%s'\n", token_count = token_count + 1, (char *)elist_get(token_list, token_count));
@@ -186,11 +247,9 @@ int main(void)
                 token_list_elements[n_pos] = '\0';
             }
         }
-        
-
-        // for(int l = 0; l < token_count; l++){
-        //     printf("token_list elem: %s\n", token_list_elements[l]);
-        // }
+        // // for(int l = 0; l < token_count; l++){
+        // //     printf("token_list elem: %s\n", token_list_elements[l]);
+        // // }
         
 		if (token_list_elements[0] == NULL){
             // LOGP("token list[0] check");
@@ -213,7 +272,7 @@ int main(void)
         if (builtin_indx == 1){
             //exit
             // printf("exit clause triggered\n");
-            // free(command);
+            free(command);
             hist_destroy();
             elist_clear(token_list);
             exit_shell();
@@ -241,9 +300,121 @@ int main(void)
         } else if (builtin_indx == 2){
             //history
             hist_print();
-        } else if (builtin_indx == 3){
-            // ! stuff
-        }
+        } 
+        // else if (builtin_indx == 3){
+        //     // ! stuff
+        //     char *after_bang = &first_token[1];
+        //     LOG("bang! :%s\n", after_bang);
+            
+        //     char *last_com;
+        //     char *search_cnum = hist_search_cnum((int)after_bang);
+        //     char *search_prefix = hist_search_prefix(after_bang);
+        //     if (strcmp(after_bang, "!") == 0){
+        //         LOGP("double bang!!");
+        //         int last_cnum = hist_last_cnum();
+        //         last_com = hist_search_cnum(last_cnum);
+        //         char *last_com_dup = strdup(last_com);
+        //         hist_add(last_com_dup);
+        //     } else if(search_cnum != NULL){
+        //         LOGP("Num bang!");
+        //         last_com = search_cnum;
+        //         char *last_com_dup = strdup(last_com);
+        //         hist_add(last_com_dup);
+        //     } else if (search_prefix != NULL){
+        //         LOGP("Prefix bang!");
+        //         last_com = search_prefix;
+        //         char *last_com_dup = strdup(last_com);
+        //         hist_add(last_com_dup);
+        //     }
+        //     //retokenize and exec
+        //     struct elist *token_list_bang = elist_create(10);
+
+        //     int token_count_bang = 0;
+        //     int null_count_bang = 0;
+        //     char *next_tok_bang = last_com;
+        //     char *curr_tok_bang;
+        //     int null_positions_bang[20];
+        //     while ((curr_tok_bang = next_token(&next_tok_bang, " \t\n\r?")) != NULL) {
+                
+        //         if (strcmp(curr_tok_bang, "|") == 0){
+        //             null_positions_bang[null_count_bang] = token_count_bang;
+        //             null_count_bang++;
+        //         }
+        //         else if (strncmp(curr_tok_bang, "#", 1) == 0){
+        //             //change here
+        //             break;
+        //         } 
+        //         elist_add(token_list_bang, curr_tok_bang);
+        //         token_count_bang = token_count_bang + 1;
+                
+        //         // printf("Token %02d: '%s'\n", token_count = token_count + 1, (char *)elist_get(token_list, token_count));
+        //     }
+
+        //     char **token_list_elements_bang = (char **) elist_storage_start(token_list_bang);
+        //     // char **token_list_elements_bang = tokenize_command(command);
+
+        //     token_list_elements_bang[token_count_bang] = (char *) 0;
+
+        //     if (null_count_bang > 0){
+        //         for (int n = 0; n < null_count_bang; n++){
+        //             int n_pos = null_positions_bang[n];
+        //             token_list_elements_bang[n_pos] = '\0';
+        //         }
+        //     }
+
+        //     if (token_list_elements_bang[0] == NULL){
+		// 	    continue;
+		//     }
+
+        //     struct command_line cmd_bang[token_count_bang - null_count_bang];
+        //     memset(cmd_bang, 0, sizeof(cmd_bang));
+
+        //     int b = 0;
+
+        //     cmd_bang[b].tokens = token_list_elements_bang;
+        //     cmd_bang[b].stdout_pipe = false;
+        //     cmd_bang[b].stdout_file = NULL;
+        //     b++;
+        //     // printf("j:%d --> %s\n", j, *(cmd[b - 1].tokens));
+        //     for (int k = 0; k < null_count_bang; k++){
+        //         int nulls = null_positions_bang[k];
+        //         // cmd[j].tokens = &tokens[nulls + 1];
+        //         cmd_bang[b].tokens = &token_list_elements_bang[nulls + 1];
+        //         cmd_bang[b].stdout_pipe = false;
+        //         cmd_bang[b].stdout_file = NULL;
+
+        //         cmd_bang[b - 1].stdout_pipe = true;
+        //         b++;
+        //         // printf("j:%d --> %s\n", j, *(cmd[j - 1].tokens));
+        //     }
+
+        //     int exec_bang = 0;
+        //     exec_bang = execute_pipeline(cmd_bang);
+            
+        //     pid_t child_bang = fork();
+        //     if (child_bang == 0){
+                
+        //         LOG("exec bang: %d\n", exec_bang);
+
+        //         //TODO FIX PROMPT EMOJI CHANGE
+        //         if (exec_bang != 0){
+        //             prompt_status_bool = false;
+        //             LOG("promp status bool: %d\n", prompt_status_bool);
+        //         } else {
+        //             prompt_status_bool = true;
+        //             LOG("promp status bool: %d\n", prompt_status_bool);
+        //         }
+        //         LOG("exec_bang_result: %d\n", exec_bang);
+        //         // exit(exec_bang);
+                
+        //     } else {
+        //         int status;
+        //         wait(&status);
+        //     }
+        //     continue;
+        //     // LOGP("Gets to ! builtin\n");
+        //     //continue;
+        // }
 
         else {
             //get struct command_line and execute pipeline from leetify.c
@@ -295,6 +466,9 @@ int main(void)
 
         }
         elist_clear(token_list);
+        free(command);
+        free_line();
+        
 
         //tokenize_command(...)
         //check_builtins(...)
@@ -312,9 +486,12 @@ int main(void)
 
         /* We are done with command; free it */
 // cleanup:
-        free(command);
+        
         
     }
+    free(command);
+    elist_destroy(token_list);
+    hist_destroy();
 
     return 0;
 }
