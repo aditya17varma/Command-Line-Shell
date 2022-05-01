@@ -89,16 +89,16 @@ int execute_pipeline(struct command_line *cmds)
         cmdtemp[0].stdout_file = NULL;
         cmdtemp[0].stdin_file = NULL;
         cmdtemp[0].stdout_append = false;
+        LOG("cmdtemp[0]: %s\n", *(cmdtemp[0].tokens));
 
         cmdtemp[1].tokens = current->tokens;
         cmdtemp[1].stdout_pipe = false;
         cmdtemp[1].stdout_file = current->stdout_file;
         cmdtemp[1].stdin_file = NULL;
         cmdtemp[1].stdout_append = current->stdout_append;
+        LOG("cmdtemp[1]: %s\n", *(cmdtemp[1].tokens));
 
         exec_result = execute_pipeline(cmdtemp);
-
-
     }
     else {
         // last or only command
