@@ -32,7 +32,7 @@ void hist_destroy(void)
 void hist_add(const char *cmd)
 {
     struct hist_entry *temp = malloc(sizeof(struct hist_entry));
-    temp->comd = cmd;
+    temp->comd = (char *)cmd;
     temp->cmd_number = counter;
     counter++;
     elist_add(list, temp);

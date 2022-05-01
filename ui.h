@@ -8,6 +8,8 @@
 #ifndef _UI_H_
 #define _UI_H_
 
+#include <stdbool.h>
+
 void init_ui(void);
 
 extern bool prompt_status_bool;

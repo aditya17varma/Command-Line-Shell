@@ -34,6 +34,7 @@ int execute_pipeline(struct command_line *cmds)
     struct command_line *current = cmds;
     // exec_result = 0;
     
+    
     if (current->stdout_pipe == true){
         int fds[2];
         pipe(fds);
@@ -56,18 +57,55 @@ int execute_pipeline(struct command_line *cmds)
             exec_result = execute_pipeline(cmds + 1);
         }
     } else {
-        // dup2(fds[0], STDIN_FILENO);
-        // dup2(fds[1], 1);
-        if (current->stdout_file != NULL){
-            int output = open(current->stdout_file, O_CREAT | O_WRONLY, 0666);
-            dup2(output, 1);
-        }
         
+        // last or only command
+        if (current->stdin_file == NULL){
+            if (current->stdout_file != NULL){
+
+                if (current->stdout_append == false){
+                    int output = open(current->stdout_file, O_CREAT | O_TRUNC| O_RDWR , 0666);
+                    dup2(output, 1);
+                } else {
+                    int output = open(current->stdout_file, O_CREAT | O_RDWR | O_APPEND, 0666);
+                    dup2(output, 1);
+                }
+            }
+
+            // else {
+            //     LOGP("There is an input file\n");
+            //     int input = open(current->stdin_file, O_RDWR, 0666);
+            //     dup2(input, 0);
+            // }
+            
+            exec_result = execvp(current->tokens[0], current->tokens);
+            close(fileno(stdin));
+            exit(EXIT_FAILURE);
+        } 
+        else {
+            LOGP("There is an input file\n");
+            int input = open(current->stdin_file, O_RDWR, 0666);
+            dup2(input, 0);
+            LOG("got inpute from: %s\n", current->stdin_file);
+        }
+        if (current->stdout_file != NULL){
+            if (current->stdout_append == false){
+                int output = open(current->stdout_file, O_CREAT | O_TRUNC| O_RDWR , 0666);
+                dup2(output, 1);
+            } else {
+                int output = open(current->stdout_file, O_CREAT | O_RDWR | O_APPEND, 0666);
+                dup2(output, 1);
+            }
+            LOG("got output from: %s\n", current->stdout_file);
+        }
+
+        LOG("About to exec cmd: %s with input: %s and output: %s\n", *(current->tokens), current->stdin_file, current->stdout_file);
         exec_result = execvp(current->tokens[0], current->tokens);
         close(fileno(stdin));
         exit(EXIT_FAILURE);
 
+        
     }
+    //free(current);
 
     return exec_result;
 }
@@ -145,7 +183,8 @@ char **tokenize_command(char *comm){
         }
         else if (strncmp(curr_tok, "#", 1) == 0){
             //change here
-            break;
+            // break;
+            continue;
         } 
         elist_add(token_list, curr_tok);
         token_count = token_count + 1;
@@ -168,7 +207,7 @@ char **tokenize_command(char *comm){
     if (null_count > 0){
         for (int n = 0; n < null_count; n++){
             int n_pos = null_positions[n];
-            tokens_elements[n_pos] = '\0';
+            tokens_elements[n_pos] = (char *) 0;
         }
     }
 
@@ -203,15 +242,31 @@ int main(void)
         // LOG("commnad dup: %s\n", command_dup);
         hist_add(command_dup);
         
-		int token_count = 0;
+		
+        
+        int token_count = 0;
         int null_count = 0;
         char *next_tok = command;
         char *curr_tok;
         int null_positions[20];
+        int redirection_positions[20];
+        int redirect_count = 0;
+        bool contains_redirection = false;
+
+
         while ((curr_tok = next_token(&next_tok, " \t\n\r?")) != NULL) {
             
             // *(tokens + token_count) = curr_tok;
+            //check if redirection present
+            if(strcmp(curr_tok, ">") == 0 || strcmp(curr_tok, ">>") == 0 || strcmp(curr_tok, "<") == 0){
+                LOG("redirection check, token: %s\n", curr_tok);
+                contains_redirection = true;
+                redirection_positions[redirect_count] = token_count;
+                redirect_count++;
+            }
+
             if (strcmp(curr_tok, "|") == 0){
+                LOG("pipe check, token: %s\n", curr_tok);
                 // *(tokens + token_count) = '\0';
                 // token_list_elements[token_count] = '\0';
                 null_positions[null_count] = token_count;
@@ -219,19 +274,27 @@ int main(void)
                 // token_count = token_count + 1;
             }
             else if (strncmp(curr_tok, "#", 1) == 0){
+                LOG("comment check, token: %s\n", curr_tok);
                 //change here
                 break;
             } 
+
             elist_add(token_list, curr_tok);
-            token_count = token_count + 1;
             
-            // printf("Token %02d: '%s'\n", token_count = token_count + 1, (char *)elist_get(token_list, token_count));
+            LOG("Token %02d: '%s'\n", token_count, (char *)elist_get(token_list, token_count));
+            token_count = token_count + 1;
+        }
+
+        if (token_count == 0){
+            continue;
         }
 
         char **token_list_elements = (char **) elist_storage_start(token_list);
 
-        // printf("token_count: %d\n", token_count);
-        // printf("Null count: %d\n", null_count);
+        LOG("token_count: %d\n", token_count);
+        LOG("Null count: %d\n", null_count);
+        LOG("redirect count: %d\n", redirect_count);
+        LOG("redirect boolean: %d\n", contains_redirection);
 
         // for (int w = 0; w < null_count; w++){
         //     printf("Null at: %d\n", null_positions[w]);
@@ -240,12 +303,32 @@ int main(void)
 
         token_list_elements[token_count] = (char *) 0;
 
+        //copy of token list used for redirection stuff
+        // char **token_list_copy[token_count];
+        char **token_list_copy = malloc(sizeof(char *) * elist_capacity(token_list));
+        for (int i = 0; i < token_count; i++){
+            // char *temp = 
+            token_list_copy[i] = token_list_elements[i];
+        }
+        char *first_copy = token_list_copy[0];
+        LOG("copy[0]: %s\n", first_copy);
+
+        token_list_copy[token_count] = (char *) 0;
+
+        if (redirect_count > 0){
+            for (int r = 0; r < redirect_count; r++){
+                int r_pos = redirection_positions[r];
+                token_list_copy[r_pos] = (char *) 0;
+            }
+        }
+
         if (null_count > 0){
             for (int n = 0; n < null_count; n++){
                 int n_pos = null_positions[n];
-                token_list_elements[n_pos] = '\0';
+                token_list_elements[n_pos] = (char *) 0;
             }
         }
+
         // // for(int l = 0; l < token_count; l++){
         // //     printf("token_list elem: %s\n", token_list_elements[l]);
         // // }
@@ -254,6 +337,8 @@ int main(void)
             // LOGP("token list[0] check");
 			continue;
 		}
+
+        
 
         //Check builtins
         char *builtins[] = {"cd", "exit", "history", "!"};
@@ -416,31 +501,92 @@ int main(void)
         // }
 
         else {
-            //get struct command_line and execute pipeline from leetify.c
+
             struct command_line cmd[token_count - null_count];
             memset(cmd, 0, sizeof(cmd));
-            
-            int j = 0;
-            //first command
-            // cmd[j].tokens = &tokens[0];
-            
-            cmd[j].tokens = token_list_elements;
-            cmd[j].stdout_pipe = false;
-            cmd[j].stdout_file = NULL;
-            j++;
-            // printf("j:%d --> %s\n", j, *(cmd[j - 1].tokens));
-            for (int k = 0; k < null_count; k++){
-                int nulls = null_positions[k];
-                // cmd[j].tokens = &tokens[nulls + 1];
-                cmd[j].tokens = &token_list_elements[nulls + 1];
+
+            //get struct command_line and execute pipeline from leetify.c
+            if(!contains_redirection){
+                LOGP("Didnt go into redirect exec\n");
+                
+                //first command
+                // cmd[j].tokens = &tokens[0];
+                int j = 0;
+
+                cmd[j].tokens = token_list_elements;
                 cmd[j].stdout_pipe = false;
                 cmd[j].stdout_file = NULL;
-
-                cmd[j - 1].stdout_pipe = true;
+                cmd[j].stdin_file = NULL;
+                cmd[j].stdout_append = false;
                 j++;
-                // printf("j:%d --> %s\n", j, *(cmd[j - 1].tokens));
-            }
+                LOG("j:%d --> %s\n", j, *(cmd[j - 1].tokens));
+                for (int k = 0; k < null_count; k++){
+                    int nulls = null_positions[k];
+                    // cmd[j].tokens = &tokens[nulls + 1];
+                    cmd[j].tokens = &token_list_elements[nulls + 1];
+                    cmd[j].stdout_pipe = false;
+                    cmd[j].stdout_file = NULL;
+                    cmd[j].stdin_file = NULL;
+                    cmd[j].stdout_append = false;
+        
 
+                    cmd[j - 1].stdout_pipe = true;
+                    j++;
+                    // printf("j:%d --> %s\n", j, *(cmd[j - 1].tokens));
+                }
+
+            }
+            else{
+                //treat redirection
+                if (null_count == 0){
+                    LOGP("Got into redirect exec\n");
+                    // no piping
+                    if (redirect_count > 0){
+                        // struct command_line cmd[token_count - redirect_count];
+                        // memset(cmd, 0, sizeof(cmd));
+                        int j = 0;
+                        //first cmd
+                        cmd[0].tokens = token_list_copy;
+                        cmd[0].stdout_pipe = false;
+                        cmd[0].stdout_file = NULL;
+                        cmd[0].stdin_file = NULL;
+                        cmd[0].stdout_append = false;
+                        // j++;
+                        LOG("cmd[0] tokens: %s\n", *(cmd[0].tokens));
+
+                        for (int r = 0; r < redirect_count; r++){
+                            int r_pos = redirection_positions[r];
+                            if (strcmp(token_list_elements[r_pos], "<") == 0){
+                                //after < is input file of before
+                                cmd[0].stdin_file = token_list_copy[r_pos + 1];
+                                LOG("stdin file: %s\n", cmd[0].stdin_file);
+                            } 
+                            else if (strcmp(token_list_elements[r_pos], ">>") == 0){
+                                // after > is output file of before, append true
+                                cmd[0].stdout_file = token_list_copy[r_pos + 1];
+                                LOG("stdout file %s\n", cmd[0].stdout_file);
+                                cmd[0].stdout_append = true;
+                                LOG("stdout append: %d\n", cmd[0].stdout_append);
+                            }     
+                            else if (strcmp(token_list_elements[r_pos], ">") == 0){
+                                LOGP("Should get here for >\n");
+                                // after > is output file of before
+                                cmd[0].stdout_file = token_list_copy[r_pos + 1];
+                                LOG("j: %d\n", j);
+                                LOG("cmd: %s >: %s\n", *(cmd[0].tokens), cmd[0].stdout_file);
+
+                            }
+                                                 
+                        }
+                    }
+                    // else {
+                    //     //piping present too
+
+                    // }
+
+                }
+            }
+            
             pid_t child = fork();
             if (child == 0){
                 int exec = 0;
@@ -464,16 +610,13 @@ int main(void)
             }
 
         }
+
+        free(token_list_copy);
         elist_clear(token_list);
         free(command);
-        
+        // free(command_dup);
 
-        //tokenize_command(...)
-        //check_builtins(...)
-        //execute_stuff(...)
-
-        
-
+        LOGP("\n\n FINISHED A LOOP \n\n");
         // when tokenizing the command line prompt
         // for each token:
             // if token == "|"
@@ -487,6 +630,8 @@ int main(void)
         
         
     }
+    elist_destroy(token_list);
+    // hist_destroy();
     
 
     return 0;

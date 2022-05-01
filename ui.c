@@ -14,7 +14,7 @@
 static const char *good_str = "😌";
 static const char *bad_str  = "🤯";
 static bool scripting = false;
-static char hostname[256];
+// static char hostname[256];
 static char cwd[256];
 static char spliced_cwd[256];
 bool prompt_status_bool = true;
@@ -82,11 +82,11 @@ char *prompt_line(void)
     const char *status = prompt_status() ? good_str : bad_str;
 
     char cmd_num[25];
-    snprintf(cmd_num, 25, "%d", prompt_cmd_num());
+    snprintf(cmd_num, 25, "%d", (int)prompt_cmd_num());
 
     char *user = prompt_username();
     char *host = prompt_hostname();
-    char *cwd = prompt_cwd();
+    char *ccwd = prompt_cwd();
 
     
 
@@ -98,7 +98,7 @@ char *prompt_line(void)
         + strlen(cmd_num)
         + strlen(user)
         + strlen(host)
-        + strlen(cwd)
+        + strlen(ccwd)
         + 1;
 
     char *prompt_str =  malloc(sizeof(char) * prompt_sz);
@@ -110,7 +110,7 @@ char *prompt_line(void)
             cmd_num,
             user,
             host,
-            cwd);
+            ccwd);
 
     return prompt_str;
 }

@@ -58,6 +58,13 @@ void **elist_storage_start(struct elist *list){
 
 void elist_destroy(struct elist *list)
 {
+    for(int i = 0; i < list->size; i++){
+        if(list->element_storage[i] != NULL){
+            free(list->element_storage[i]);
+        }  
+        
+    }
+    
     free(list->element_storage);
     free(list);
 
@@ -66,19 +73,6 @@ void elist_destroy(struct elist *list)
 int elist_set_capacity(struct elist *list, size_t capacity)
 {
     if (capacity == 0){
-        // option 1: set size to 1, then clear array
-        // option 2: set the element storage to NULL, set the new capacity, return, and ensure it get re-allocated
-        
-        //Option 1
-        // list->capacity == 1
-        // elist_clear(list) // will probably update list->size
-
-        //Option 2
-        //list->element_storage = NULL
-        //list->capacity = 0;
-        //list->size = 0
-        // add a condition that checks for capacity == 0, and realloc to default capacity
-        
         capacity = 1;
         list->size = 0;
 
