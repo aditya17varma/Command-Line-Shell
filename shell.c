@@ -56,38 +56,54 @@ int execute_pipeline(struct command_line *cmds)
             // close(fds[1]);
             exec_result = execute_pipeline(cmds + 1);
         }
-    } else {
+    }
+    
+    else if (current->stdin_file != NULL){
         
+        // int fds2[2];
+        // pipe(fds2);
+        // pid_t child2 = fork();
+        LOGP("There is an input file\n");
+
+        // if (child2==0){
+        //     char *cat_args[2];
+        //     cat_args[0] = "cat";
+        //     cat_args[1] = NULL;
+        //     int input = open(current->stdin_file, O_RDONLY, 0666);
+        //     dup2(fds2[1], input);
+        //     close(fds2[0]);
+        //     LOG("got input from: %s\n", current->stdin_file);
+        //     exec_result = execvp(cat_args[0], cat_args);
+        //     close(fileno(stdin));
+        //     exit(EXIT_FAILURE);
+
+        // }
+        // create new pipeline and execute
+        // cat inputfile | cmd -> output file
+        struct command_line cmdtemp[2];
+
+        char new_cmd[sizeof(current->stdin_file) + 4] = "";
+        sprintf(new_cmd, "cat %s", current->stdin_file);
+        cmdtemp[0].tokens = (char **) new_cmd;
+        cmdtemp[0].stdout_pipe = true;
+        cmdtemp[0].stdout_file = NULL;
+        cmdtemp[0].stdin_file = NULL;
+        cmdtemp[0].stdout_append = false;
+
+        cmdtemp[1].tokens = current->tokens;
+        cmdtemp[1].stdout_pipe = false;
+        cmdtemp[1].stdout_file = current->stdout_file;
+        cmdtemp[1].stdin_file = NULL;
+        cmdtemp[1].stdout_append = current->stdout_append;
+
+        exec_result = execute_pipeline(cmdtemp);
+
+
+    }
+    else {
         // last or only command
-        if (current->stdin_file == NULL){
-            if (current->stdout_file != NULL){
-
-                if (current->stdout_append == false){
-                    int output = open(current->stdout_file, O_CREAT | O_TRUNC| O_RDWR , 0666);
-                    dup2(output, 1);
-                } else {
-                    int output = open(current->stdout_file, O_CREAT | O_RDWR | O_APPEND, 0666);
-                    dup2(output, 1);
-                }
-            }
-
-            // else {
-            //     LOGP("There is an input file\n");
-            //     int input = open(current->stdin_file, O_RDWR, 0666);
-            //     dup2(input, 0);
-            // }
-            
-            exec_result = execvp(current->tokens[0], current->tokens);
-            close(fileno(stdin));
-            exit(EXIT_FAILURE);
-        } 
-        else {
-            LOGP("There is an input file\n");
-            int input = open(current->stdin_file, O_RDWR, 0666);
-            dup2(input, 0);
-            LOG("got inpute from: %s\n", current->stdin_file);
-        }
         if (current->stdout_file != NULL){
+
             if (current->stdout_append == false){
                 int output = open(current->stdout_file, O_CREAT | O_TRUNC| O_RDWR , 0666);
                 dup2(output, 1);
@@ -95,15 +111,10 @@ int execute_pipeline(struct command_line *cmds)
                 int output = open(current->stdout_file, O_CREAT | O_RDWR | O_APPEND, 0666);
                 dup2(output, 1);
             }
-            LOG("got output from: %s\n", current->stdout_file);
         }
-
-        LOG("About to exec cmd: %s with input: %s and output: %s\n", *(current->tokens), current->stdin_file, current->stdout_file);
         exec_result = execvp(current->tokens[0], current->tokens);
         close(fileno(stdin));
         exit(EXIT_FAILURE);
-
-        
     }
     //free(current);
 
