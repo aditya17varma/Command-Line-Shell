@@ -1,7 +1,7 @@
-# Project 3: Command Line Shell
+# Command Line Shell
 
 
-This project is an attempt to build a shell using the concpets learnt so far.
+This project is an attempt to build a basic shell.
 The main concepts used are: elastic array, pipes, forks, signal handling, and commincicating between multiple files.
 The shell uses execvp to execute the commands the user passes in.
 Piping is supported.
@@ -41,13 +41,9 @@ make test run='4 8 12'
 make test run=4 debug=on
 ```
 
-If you are satisfied with the state of your program, you can also run the test cases on the grading machine. Check your changes into your project repository and then run:
-
-```
-make grade
-```
 
 ## Demo Run
+```
 
 ****************************************************************************
 
@@ -105,4 +101,5 @@ ui.o
 >>-[😌]-[2]-[avkunatharaju@TheSevenCs:~/P3-aditya17varma]-> cd
 shell.c:200:main(): Input command: cd
 shell.c:265:main(): builtin: cd cd
->>-[😌]-[3]-[avkunatharaju@TheSevenCs:~]-> 
+>>-[😌]-[3]-[avkunatharaju@TheSevenCs:~]->
+```
